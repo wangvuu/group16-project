@@ -1,9 +1,14 @@
-const express = require('express');
+// routes/user.js
+const express = require("express");
 const router = express.Router();
-const userController = require('../controllers/userController');
+const userController = require("../controllers/userController");
 
-// Định nghĩa route
-router.get('/users', userController.getUsers);
-router.post('/users', userController.createUser);
+console.log("👉 userController:", userController);
+
+// API lấy danh sách user
+router.get("/users", userController.getUsers);
+
+// API thêm user mới
+router.post("/users", userController.addUser);
 
 module.exports = router;
