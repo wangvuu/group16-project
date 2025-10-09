@@ -1,20 +1,30 @@
-// models/User.js
+// backend/models/User.js
 const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true,
-    trim: true
+const userSchema = new mongoose.Schema(
+  {
+    name: { 
+      type: String, 
+      required: true 
+    },
+    email: { 
+      type: String, 
+      required: true, 
+      unique: true 
+    },
+    passwordHash: { 
+      type: String, 
+      required: true 
+    },
+    role: { 
+      type: String, 
+      enum: ['user', 'admin'], 
+      default: 'user' 
+    }
   },
-  email: {
-    type: String,
-    required: true,
-    trim: true,
-    lowercase: true
+  { 
+    timestamps: true // ✅ Tự động thêm createdAt và updatedAt
   }
-}, {
-  timestamps: true // tự động có createdAt, updatedAt
-});
+);
 
 module.exports = mongoose.model('User', userSchema);
