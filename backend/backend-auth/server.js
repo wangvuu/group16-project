@@ -15,6 +15,18 @@ app.use(express.json());
 
 // Kết nối MongoDB
 connectDB();
+// 🧪 Route test server
+app.get("/", (req, res) => {
+  res.send("API User Management đang hoạt động! 🧩");
+});
+
+// ⚙️ Kiểm tra quyền RBAC test
+app.get("/api/test", (req, res) => {
+  res.json({
+    message: "Server đã sẵn sàng kiểm tra phân quyền RBAC (User, Admin, Moderator)!",
+  });
+});
+
 
 // Định tuyến
 app.use("/api/auth", authRoutes);
