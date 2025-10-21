@@ -37,3 +37,7 @@ export const adminOnly = (req, res, next) => {
     return res.status(403).json({ message: "Chỉ admin được phép!" });
   }
 };
+
+// 🆕 Alias để tương thích với logRoutes.js
+export const verifyToken = protect;
+export const isAdmin = adminOnly;
