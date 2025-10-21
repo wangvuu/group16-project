@@ -22,20 +22,27 @@ export default function Navbar() {
         borderBottom: "1px solid #ddd",
       }}
     >
+      {/* Khi user đã đăng nhập */}
       {user ? (
         <>
+          {/* Link cơ bản */}
           <Link to="/profile">Hồ sơ</Link>
+          <Link to="/upload-avatar">Upload Avatar</Link>
 
+          {/* Moderator */}
           {user.role === "moderator" && (
             <Link to="/moderator">Quản lý bài viết</Link>
           )}
 
+          {/* Admin */}
           {user.role === "admin" && <Link to="/admin">Quản trị hệ thống</Link>}
 
+          {/* Hiển thị tên & vai trò */}
           <span style={{ marginLeft: "20px", color: "gray" }}>
             👤 {user.name} ({user.role})
           </span>
 
+          {/* Nút đăng xuất */}
           <button
             onClick={handleLogout}
             style={{
@@ -52,7 +59,11 @@ export default function Navbar() {
           </button>
         </>
       ) : (
-        <Link to="/login">Đăng nhập</Link>
+        // Khi chưa đăng nhập
+        <>
+          <Link to="/login">Đăng nhập</Link>
+          <Link to="/signup">Đăng ký</Link>
+        </>
       )}
     </nav>
   );
