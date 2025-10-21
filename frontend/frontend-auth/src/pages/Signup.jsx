@@ -2,7 +2,12 @@ import React, { useState } from "react";
 import { signup } from "../services/api";
 
 export default function Signup() {
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "user" });
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "user",
+  });
   const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
@@ -13,14 +18,14 @@ export default function Signup() {
     e.preventDefault();
     try {
       const res = await signup(form);
-      setMessage(res.data.message || "Đăng ký thành công!");
+      setMessage(res.data.message || "✅ Đăng ký thành công!");
     } catch (err) {
-      setMessage(err.response?.data?.message || "Lỗi đăng ký!");
+      setMessage(err.response?.data?.message || "❌ Lỗi đăng ký!");
     }
   };
 
   return (
-    <div className="container">
+    <div className="container" style={{ maxWidth: 400, margin: "auto" }}>
       <h2>Đăng ký tài khoản</h2>
       <form onSubmit={handleSubmit}>
         <input
@@ -45,8 +50,8 @@ export default function Signup() {
 
         <select name="role" value={form.role} onChange={handleChange}>
           <option value="user">Người dùng</option>
+          <option value="moderator">Điều hành viên</option>
           <option value="admin">Quản trị viên</option>
-          <option value="editor">Biên tập viên</option>
         </select>
 
         <button type="submit">Đăng ký</button>

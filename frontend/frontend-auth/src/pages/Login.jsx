@@ -1,17 +1,15 @@
-import React, { useState } from "react";
-import { login } from "../services/api";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../services/api";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
-  const [showToken, setShowToken] = useState(false);
   const navigate = useNavigate();
 
   // 📌 Xử lý thay đổi input
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
   // 📌 Xử lý đăng nhập
   const handleSubmit = async (e) => {
@@ -19,18 +17,20 @@ export default function Login() {
     try {
       const res = await login(form);
 
-      // ✅ Lưu token vào localStorage
+      // ✅ Lưu token và thông tin user
       localStorage.setItem("accessToken", res.data.accessToken);
       localStorage.setItem("refreshToken", res.data.refreshToken);
-      localStorage.setItem("role", res.data.user.role);
+      
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
       setMessage("✅ Đăng nhập thành công!");
-      setShowToken(true);
 
-      // ✅ Điều hướng đến đúng trang
+      const role = res.data.user.role;
+
+      // ✅ Điều hướng theo vai trò
       setTimeout(() => {
-        if (res.data.user.role === "admin") navigate("/admin");
+        if (role === "admin") navigate("/admin");
+        else if (role === "moderator") navigate("/moderator");
         else navigate("/profile");
       }, 1000);
     } catch (err) {
@@ -41,6 +41,7 @@ export default function Login() {
 
   return (
     <div
+      className="container"
       style={{
         maxWidth: 400,
         margin: "60px auto",
@@ -52,13 +53,11 @@ export default function Login() {
       }}
     >
       <h2>🔐 Đăng nhập</h2>
-
       <form
         onSubmit={handleSubmit}
         style={{ display: "flex", flexDirection: "column", gap: "10px" }}
       >
         <input
-          type="email"
           name="email"
           placeholder="Email"
           value={form.email}
@@ -90,7 +89,6 @@ export default function Login() {
         </button>
       </form>
 
-      {/* Nút quên mật khẩu */}
       <p style={{ marginTop: "10px" }}>
         <button
           type="button"
@@ -103,11 +101,10 @@ export default function Login() {
             cursor: "pointer",
           }}
         >
-Quên mật khẩu?
+          Quên mật khẩu?
         </button>
       </p>
 
-      {/* Thông báo */}
       {message && (
         <p
           style={{
@@ -118,25 +115,6 @@ Quên mật khẩu?
         >
           {message}
         </p>
-      )}
-
-      {/* Hiển thị token để test */}
-      {showToken && (
-        <div
-          style={{
-            marginTop: 20,
-            textAlign: "left",
-            wordBreak: "break-all",
-            backgroundColor: "#f7f7f7",
-            padding: 10,
-            borderRadius: 6,
-          }}
-        >
-          <strong>Access Token:</strong>
-          <p>{localStorage.getItem("accessToken")}</p>
-          <strong>Refresh Token:</strong>
-          <p>{localStorage.getItem("refreshToken")}</p>
-        </div>
       )}
     </div>
   );
