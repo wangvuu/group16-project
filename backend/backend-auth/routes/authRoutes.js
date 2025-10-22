@@ -5,6 +5,9 @@ import { body, validationResult } from "express-validator";
 import User from "../models/User.js";
 import RefreshToken from "../models/RefreshToken.js";
 
+// 🆕 Thêm rate limit
+import { loginRateLimiter } from "../middleware/rateLimit.js";
+
 const router = express.Router();
 
 /* =======================
@@ -50,9 +53,9 @@ router.post(
 );
 
 /* =======================
-   POST /login
+   POST /login (Thêm rate limit)
 ======================= */
-router.post("/login", async (req, res) => {
+router.post("/login", loginRateLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -92,7 +95,7 @@ router.post("/login", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Lỗi server" });
-    }
+  }
 });
 
 /* =======================
@@ -104,7 +107,6 @@ router.post("/refresh", async (req, res) => {
     return res.status(400).json({ message: "Thiếu refresh token" });
 
   try {
-    // Kiểm tra token trong DB
     const storedToken = await RefreshToken.findOne({
       token: refreshToken,
       revoked: false,
@@ -112,7 +114,6 @@ router.post("/refresh", async (req, res) => {
     if (!storedToken)
       return res.status(403).json({ message: "Refresh token không hợp lệ hoặc đã bị thu hồi" });
 
-    // Xác thực token
     jwt.verify(
       refreshToken,
       process.env.REFRESH_TOKEN_SECRET || "refresh_secret_key",
@@ -120,7 +121,6 @@ router.post("/refresh", async (req, res) => {
         if (err)
           return res.status(403).json({ message: "Refresh token hết hạn hoặc sai" });
 
-        // Tạo access token mới
         const newAccessToken = jwt.sign(
           { id: user.id, email: user.email, role: user.role },
           process.env.ACCESS_TOKEN_SECRET || "access_secret_key",
