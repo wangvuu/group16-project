@@ -1,11 +1,16 @@
 import mongoose from "mongoose";
 
-const logSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: false },
-  action: { type: String, required: true },
-  ip: { type: String },
-  userAgent: { type: String },
-  createdAt: { type: Date, default: Date.now }
-});
+const logSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null, // có thể là guest
+    },
+    action: { type: String, required: true },
+  },
+  { timestamps: true } // tự động có createdAt, updatedAt
+);
 
-export default mongoose.model("Log", logSchema);
+const Log = mongoose.model("Log", logSchema);
+export default Log;
