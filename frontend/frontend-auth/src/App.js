@@ -1,5 +1,13 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+// src/App.js
+import React, { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Link,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Profile from "./pages/Profile";
@@ -9,31 +17,101 @@ import Admin from "./pages/Admin";
 import ModeratorPage from "./pages/ModeratorPage";
 import UploadAvatar from "./pages/UploadAvatar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminLogs from "./pages/AdminLogs";
+import { useDispatch } from "react-redux";
+import { logout } from "./store/authSlice";
 
-export default function App() {
-  const user = JSON.parse(localStorage.getItem("user"));
+function AppContent() {
+  const dispatch = useDispatch();
+  const location = useLocation();
+  const [user, setUser] = useState(() => {
+    const storedUser = localStorage.getItem("user");
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+
+  // 🔄 Đồng bộ user khi localStorage thay đổi
+  useEffect(() => {
+    const syncUser = () => {
+      const storedUser = localStorage.getItem("user");
+      setUser(storedUser ? JSON.parse(storedUser) : null);
+    };
+    window.addEventListener("storage", syncUser);
+    window.addEventListener("userChange", syncUser);
+    return () => {
+      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("userChange", syncUser);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    setUser(null);
+    window.location.href = "/login";
+  };
+
+  // 🟢 Các trang công khai
+  const publicPaths = ["/login", "/signup", "/forgot-password", "/reset-password"];
+
+  // 🧭 Nếu chưa đăng nhập và không ở trang công khai → về login
+  if (!user && !publicPaths.includes(location.pathname)) {
+    console.warn("⚠️ Chưa đăng nhập, chuyển hướng về /login...");
+    return <Navigate to="/login" replace />;
+  }
 
   return (
-    <Router>
-      {/* 🧭 Thanh điều hướng */}
+    <>
+      {/* 🔗 Thanh điều hướng */}
       <nav style={{ padding: 10, borderBottom: "1px solid #ccc" }}>
-        <Link to="/signup">Đăng ký</Link> |{" "}
-        <Link to="/login">Đăng nhập</Link> |{" "}
-        <Link to="/profile">Hồ sơ cá nhân</Link> |{" "}
-        {user?.role === "admin" && <Link to="/admin">Quản trị</Link>} |{" "}
-        {user?.role === "moderator" && <Link to="/moderator">Moderator</Link>} |{" "}
-        <Link to="/upload-avatar">Upload Avatar</Link>
+        {!user ? (
+          <>
+            <Link to="/signup">Đăng ký</Link> | <Link to="/login">Đăng nhập</Link>
+          </>
+        ) : (
+          <>
+            <Link to="/profile">Hồ sơ cá nhân</Link> |{" "}
+            {user.role === "admin" && <Link to="/admin">Quản trị</Link>} |{" "}
+            {user.role === "moderator" && <Link to="/moderator">Moderator</Link>} |{" "}
+            <Link to="/upload-avatar">Upload Avatar</Link>
+            {user.role === "admin" && (
+              <>
+                {" | "}
+                <Link to="/logs">Xem Logs</Link>
+              </>
+            )}
+            <button
+              onClick={handleLogout}
+              style={{
+                float: "right",
+                background: "none",
+                border: "none",
+                color: "red",
+                cursor: "pointer",
+              }}
+            >
+              🚪 Đăng xuất
+            </button>
+          </>
+        )}
       </nav>
 
-      {/* 🧩 Định nghĩa route */}
-      <Routes>
-        {/* Auth */}
+      {/* 🛣️ Các route */}
+                <Routes>
+                  {/* Nếu vào "/" → tự điều hướng */}
+                  {/* Khi load "/" thì luôn vào trang đăng nhập nếu chưa có user */}
+          <Route
+            path="/"
+            element={<Navigate to="/login" replace />}
+          />
+
+        
+
         <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login setUser={setUser} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/* Profile (tất cả roles đều được vào sau khi login) */}
         <Route
           path="/profile"
           element={
@@ -42,8 +120,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Upload Avatar */}
         <Route
           path="/upload-avatar"
           element={
@@ -52,8 +128,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Moderator */}
         <Route
           path="/moderator"
           element={
@@ -62,8 +136,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-
-        {/* Admin */}
         <Route
           path="/admin"
           element={
@@ -72,7 +144,23 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/logs"
+          element={
+            <ProtectedRoute allowedRoles={["admin"]}>
+              <AdminLogs />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
+    </>
+  );
+}
+
+export default function App() {
+  return (
+    <Router>
+      <AppContent />
     </Router>
   );
 }

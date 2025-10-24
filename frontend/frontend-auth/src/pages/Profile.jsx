@@ -12,8 +12,6 @@ export default function Profile() {
         const res = await getProfile();
         setUser(res.data);
         setForm({ name: res.data.name, email: res.data.email });
-
-        // ✅ Cập nhật localStorage để đồng bộ avatar
         localStorage.setItem("user", JSON.stringify(res.data));
       } catch {
         setMessage("❌ Lỗi tải thông tin người dùng! Hãy đăng nhập lại.");
@@ -34,13 +32,29 @@ export default function Profile() {
     }
   };
 
-  if (!user) return <p style={{ textAlign: "center" }}>Đang tải thông tin...</p>;
+  if (!user)
+    return (
+      <p style={{ textAlign: "center", marginTop: "40px" }}>
+        ⏳ Đang tải thông tin...
+      </p>
+    );
 
   return (
-    <div className="container" style={{ maxWidth: 500, margin: "40px auto", textAlign: "center" }}>
-      <h2>🧍‍♂️ Hồ sơ cá nhân</h2>
+    <div
+      style={{
+        maxWidth: "500px",
+        margin: "60px auto",
+        backgroundColor: "#f0f4ff",
+        padding: "30px",
+        borderRadius: "15px",
+        boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+        textAlign: "center",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <h2 style={{ color: "#2b3a67", marginBottom: "20px" }}>🧍‍♂️ Hồ sơ cá nhân</h2>
 
-      {/* ✅ Ảnh đại diện */}
+      {/* ✅ Avatar */}
       <div style={{ marginBottom: "15px" }}>
         <img
           src={user.avatar || "https://via.placeholder.com/120?text=No+Avatar"}
@@ -50,34 +64,57 @@ export default function Profile() {
           style={{
             borderRadius: "50%",
             objectFit: "cover",
-            border: "2px solid #ccc",
+            border: "3px solid #3b82f6",
+            boxShadow: "0 0 6px rgba(0,0,0,0.15)",
           }}
         />
-        <p>
-          <a href="/upload-avatar" style={{ color: "blue", textDecoration: "underline" }}>
-            Thay đổi ảnh đại diện
+        <p style={{ marginTop: "8px" }}>
+          <a
+            href="/upload-avatar"
+            style={{
+              color: "#1d4ed8",
+              textDecoration: "underline",
+              fontSize: "14px",
+            }}
+          >
+            ✏️ Thay đổi ảnh đại diện
           </a>
         </p>
       </div>
 
-      {/* ✅ Thông tin user */}
-      <div style={{ marginBottom: "10px" }}>
-        <strong>{user.name}</strong>
-        <p>{user.email}</p>
-        <p>
+      {/* ✅ Thông tin */}
+      <div style={{ marginBottom: "20px" }}>
+        <h3 style={{ margin: "8px 0", color: "#111827" }}>{user.name}</h3>
+        <p style={{ margin: "4px 0", color: "#555" }}>{user.email}</p>
+        <p style={{ margin: "4px 0", color: "#333" }}>
           <strong>Vai trò:</strong>{" "}
           {typeof user.role === "object" ? user.role.name : user.role}
         </p>
       </div>
 
       {/* ✅ Form cập nhật */}
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: "5px", justifyContent: "center" }}>
+      <form
+        onSubmit={handleSubmit}
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+          alignItems: "center",
+        }}
+      >
         <input
           name="name"
           value={form.name}
           onChange={(e) => setForm({ ...form, name: e.target.value })}
           placeholder="Tên"
           required
+          style={{
+            width: "80%",
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
         />
         <input
           name="email"
@@ -85,14 +122,39 @@ export default function Profile() {
           onChange={(e) => setForm({ ...form, email: e.target.value })}
           placeholder="Email"
           required
+          style={{
+            width: "80%",
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
         />
-        <button type="submit">Cập nhật</button>
+        <button
+          type="submit"
+          style={{
+            width: "84%",
+            padding: "10px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontSize: "16px",
+            transition: "0.2s",
+          }}
+          onMouseOver={(e) => (e.target.style.backgroundColor = "#2563eb")}
+          onMouseOut={(e) => (e.target.style.backgroundColor = "#3b82f6")}
+        >
+          💾 Cập nhật
+        </button>
       </form>
 
+      {/* ✅ Thông báo */}
       {message && (
         <p
           style={{
-            marginTop: 15,
+            marginTop: "15px",
             color: message.includes("✅") ? "green" : "red",
             fontWeight: "bold",
           }}

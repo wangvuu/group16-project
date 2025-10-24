@@ -4,14 +4,13 @@ import jwt from "jsonwebtoken";
 import { body, validationResult } from "express-validator";
 import User from "../models/User.js";
 import RefreshToken from "../models/RefreshToken.js";
-
-// 🆕 Thêm rate limit
+import Log from "../models/Log.js";
 import { loginRateLimiter } from "../middleware/rateLimit.js";
 
 const router = express.Router();
 
 /* =======================
-   POST /signup
+   🧾 POST /signup
 ======================= */
 router.post(
   "/signup",
@@ -31,7 +30,7 @@ router.post(
       if (existingUser)
         return res.status(400).json({ message: "Email đã tồn tại!" });
 
-      const validRoles = ["admin", "editor", "user"];
+      const validRoles = ["admin", "moderator", "user"];
       const assignedRole = validRoles.includes(role) ? role : "user";
 
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -44,46 +43,75 @@ router.post(
       });
 
       await newUser.save();
-      res.status(201).json({ message: `Đăng ký thành công với vai trò: ${assignedRole}` });
+
+      // 📝 Ghi log đăng ký
+      await Log.create({
+        userId: newUser._id,
+        action: `🆕 Đăng ký tài khoản mới (${email})`,
+      });
+
+      res.status(201).json({
+        message: `Đăng ký thành công với vai trò: ${assignedRole}`,
+      });
     } catch (err) {
-      console.error(err);
+      console.error("🔥 Lỗi signup:", err);
       res.status(500).json({ message: "Lỗi server" });
     }
   }
 );
 
 /* =======================
-   POST /login (Thêm rate limit)
+   🔐 POST /login
 ======================= */
 router.post("/login", loginRateLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: "Email không tồn tại" });
+    if (!user) {
+      await Log.create({
+        action: `❌ Đăng nhập thất bại: email không tồn tại (${email})`,
+      });
+      return res.status(400).json({ message: "Email không tồn tại" });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: "Sai mật khẩu" });
+    if (!isMatch) {
+      await Log.create({
+        userId: user._id,
+        action: `❌ Sai mật khẩu khi đăng nhập (${email})`,
+      });
+      return res.status(400).json({ message: "Sai mật khẩu" });
+    }
 
-    // ====== Tạo Access Token (ngắn hạn) ======
+    // 🔑 Tạo Access Token & Refresh Token
     const accessToken = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.ACCESS_TOKEN_SECRET || "access_secret_key",
-      { expiresIn: "30s" }
+      { expiresIn: "15m" }
     );
 
-    // ====== Tạo Refresh Token (dài hạn) ======
     const refreshToken = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.REFRESH_TOKEN_SECRET || "refresh_secret_key",
       { expiresIn: "7d" }
     );
 
-    // ====== Lưu Refresh Token vào DB ======
-    await RefreshToken.create({
-      user: user._id,
-      token: refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 ngày
+    // ✅ Cập nhật hoặc tạo mới refresh token (fix lỗi 500)
+    await RefreshToken.findOneAndUpdate(
+      { user: user._id },
+      {
+        token: refreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        revoked: false,
+      },
+      { upsert: true, new: true }
+    );
+
+    // 📝 Ghi log đăng nhập thành công
+    await Log.create({
+      userId: user._id,
+      action: `✅ Đăng nhập thành công (${email})`,
     });
 
     res.json({
@@ -93,13 +121,13 @@ router.post("/login", loginRateLimiter, async (req, res) => {
       user: { name: user.name, email: user.email, role: user.role },
     });
   } catch (err) {
-    console.error(err);
+    console.error("🔥 Lỗi login:", err);
     res.status(500).json({ message: "Lỗi server" });
   }
 });
 
 /* =======================
-   POST /refresh
+   🔁 POST /refresh
 ======================= */
 router.post("/refresh", async (req, res) => {
   const { refreshToken } = req.body;
@@ -112,20 +140,29 @@ router.post("/refresh", async (req, res) => {
       revoked: false,
     });
     if (!storedToken)
-      return res.status(403).json({ message: "Refresh token không hợp lệ hoặc đã bị thu hồi" });
+      return res
+        .status(403)
+        .json({ message: "Refresh token không hợp lệ hoặc đã bị thu hồi" });
 
     jwt.verify(
       refreshToken,
       process.env.REFRESH_TOKEN_SECRET || "refresh_secret_key",
       async (err, user) => {
         if (err)
-          return res.status(403).json({ message: "Refresh token hết hạn hoặc sai" });
+          return res
+            .status(403)
+            .json({ message: "Refresh token hết hạn hoặc sai" });
 
         const newAccessToken = jwt.sign(
           { id: user.id, email: user.email, role: user.role },
           process.env.ACCESS_TOKEN_SECRET || "access_secret_key",
           { expiresIn: "15m" }
         );
+
+        await Log.create({
+          userId: user.id,
+          action: `🔁 Làm mới access token (${user.email})`,
+        });
 
         res.json({
           message: "Tạo access token mới thành công!",
@@ -134,26 +171,35 @@ router.post("/refresh", async (req, res) => {
       }
     );
   } catch (err) {
-    console.error(err);
+    console.error("🔥 Lỗi refresh:", err);
     res.status(500).json({ message: "Lỗi server" });
   }
 });
 
 /* =======================
-   POST /logout
+   🚪 POST /logout
 ======================= */
 router.post("/logout", async (req, res) => {
   const { refreshToken } = req.body;
+
   try {
     if (refreshToken) {
-      await RefreshToken.findOneAndUpdate(
+      const tokenDoc = await RefreshToken.findOneAndUpdate(
         { token: refreshToken },
         { revoked: true }
       );
+
+      if (tokenDoc) {
+        await Log.create({
+          userId: tokenDoc.user,
+          action: "🚪 Người dùng đăng xuất và thu hồi refresh token",
+        });
+      }
     }
-    res.json({ message: "Đăng xuất thành công! (Refresh token đã thu hồi)" });
+
+    res.json({ message: "Đăng xuất thành công!" });
   } catch (err) {
-    console.error(err);
+    console.error("🔥 Lỗi logout:", err);
     res.status(500).json({ message: "Lỗi server" });
   }
 });

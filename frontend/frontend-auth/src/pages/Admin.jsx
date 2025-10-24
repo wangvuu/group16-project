@@ -11,7 +11,7 @@ export default function Admin() {
   const user = JSON.parse(localStorage.getItem("user"));
   const rawRole = user?.role;
 
-  // ✅ Chuẩn hóa role (nếu là object, chuỗi hoặc id)
+  // ✅ Chuẩn hóa role
   const role =
     typeof rawRole === "object"
       ? rawRole.name
@@ -41,7 +41,7 @@ export default function Admin() {
     if (token) fetchUsers();
   }, [token]);
 
-  // ✅ Xóa người dùng (chỉ admin)
+  // ✅ Xóa người dùng
   const handleDelete = async (id) => {
     if (role !== "admin") {
       alert("⚠️ Chỉ Admin mới có quyền xóa!");
@@ -60,71 +60,132 @@ export default function Admin() {
   };
 
   return (
-    <div className="container" style={{ padding: "20px" }}>
-      <h2>📋 Trang Quản trị ({role})</h2>
+    <div
+      style={{
+        maxWidth: "900px",
+        margin: "50px auto",
+        backgroundColor: "#f0f4ff",
+        padding: "30px",
+        borderRadius: "15px",
+        boxShadow: "0 0 15px rgba(0,0,0,0.1)",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <h2
+        style={{
+          color: "#2b3a67",
+          textAlign: "center",
+          marginBottom: "25px",
+        }}
+      >
+        📋 Trang Quản Trị ({role === "admin" ? "Quản trị viên" : "Điều hành viên"})
+      </h2>
+
       {message && (
         <p
           style={{
+            textAlign: "center",
             color: message.includes("✅") ? "green" : "red",
             fontWeight: "bold",
+            marginBottom: "20px",
           }}
         >
           {message}
         </p>
       )}
 
-      <table
-        border="1"
-        cellPadding="8"
-        style={{ borderCollapse: "collapse", width: "100%" }}
-      >
-        <thead>
-          <tr style={{ backgroundColor: "#f0f0f0" }}>
-            <th>Tên</th>
-            <th>Email</th>
-            <th>Vai trò</th>
-            {role === "admin" && <th>Hành động</th>}
-          </tr>
-        </thead>
-        <tbody>
-          {users.length ? (
-            users.map((u) => (
-              <tr key={u._id}>
-                <td>{u.name}</td>
-                <td>{u.email}</td>
-                <td>
-                  {typeof u.role === "object"
-                    ? u.role?.name
-                    : u.role || "Không có vai trò"}
-                </td>
-                {role === "admin" && (
-                  <td>
-                    <button
-                      onClick={() => handleDelete(u._id)}
-                      style={{
-                        backgroundColor: "red",
-                        color: "white",
-                        border: "none",
-                        padding: "5px 10px",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Xóa
-                    </button>
-                  </td>
-                )}
-              </tr>
-            ))
-          ) : (
+      <div style={{ overflowX: "auto" }}>
+        <table
+          style={{
+            width: "100%",
+            borderCollapse: "collapse",
+            borderRadius: "10px",
+            overflow: "hidden",
+          }}
+        >
+          <thead style={{ backgroundColor: "#3b82f6", color: "white" }}>
             <tr>
-              <td colSpan={role === "admin" ? 4 : 3}>
-                Không có người dùng nào.
-              </td>
+              <th style={thStyle}>Tên</th>
+              <th style={thStyle}>Email</th>
+              <th style={thStyle}>Vai trò</th>
+              {role === "admin" && <th style={thStyle}>Hành động</th>}
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {users.length ? (
+              users.map((u, i) => (
+                <tr
+                  key={u._id}
+                  style={{
+                    backgroundColor: i % 2 === 0 ? "#ffffff" : "#eef2ff",
+                    textAlign: "center",
+                    transition: "0.2s",
+                  }}
+                  onMouseOver={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#dbeafe")
+                  }
+                  onMouseOut={(e) =>
+                    (e.currentTarget.style.backgroundColor =
+                      i % 2 === 0 ? "#ffffff" : "#eef2ff")
+                  }
+                >
+                  <td style={tdStyle}>{u.name}</td>
+                  <td style={tdStyle}>{u.email}</td>
+                  <td style={tdStyle}>
+                    {typeof u.role === "object"
+                      ? u.role?.name
+                      : u.role || "Không có vai trò"}
+                  </td>
+                  {role === "admin" && (
+                    <td style={tdStyle}>
+                      <button
+                        onClick={() => handleDelete(u._id)}
+                        style={deleteBtn}
+                      >
+                        🗑 Xóa
+                      </button>
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={role === "admin" ? 4 : 3}
+                  style={{ textAlign: "center", padding: "20px" }}
+                >
+                  Không có người dùng nào.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
+
+// 🎨 CSS style inline
+const thStyle = {
+  padding: "12px",
+  fontSize: "16px",
+  fontWeight: "600",
+  borderBottom: "2px solid #2563eb",
+};
+
+const tdStyle = {
+  padding: "10px",
+  borderBottom: "1px solid #ddd",
+  fontSize: "15px",
+};
+
+const deleteBtn = {
+  backgroundColor: "#ef4444",
+  color: "white",
+  border: "none",
+  padding: "6px 12px",
+  borderRadius: "6px",
+  cursor: "pointer",
+  fontSize: "14px",
+  transition: "0.2s",
+};
