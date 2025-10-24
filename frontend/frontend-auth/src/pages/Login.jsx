@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../services/api";
-
-// 🧩 Redux
 import { useDispatch, useSelector } from "react-redux";
 import { loginUser } from "../store/authSlice";
 
@@ -21,22 +19,16 @@ export default function Login() {
     e.preventDefault();
     try {
       dispatch(loginUser(form));
-
       const res = await login(form);
 
-      // ✅ Lưu token và thông tin user
       localStorage.setItem("accessToken", res.data.accessToken);
       localStorage.setItem("refreshToken", res.data.refreshToken);
       localStorage.setItem("user", JSON.stringify(res.data.user));
 
-      // 🟢 Thông báo cho App.js biết user đã thay đổi
       window.dispatchEvent(new Event("userChange"));
-
       setMessage("✅ Đăng nhập thành công!");
 
       const role = res.data.user.role;
-
-      // ✅ Điều hướng theo vai trò
       setTimeout(() => {
         if (role === "admin") navigate("/admin");
         else if (role === "moderator") navigate("/moderator");
@@ -50,21 +42,22 @@ export default function Login() {
 
   return (
     <div
-      className="container"
       style={{
-        maxWidth: 400,
-        margin: "60px auto",
+        maxWidth: "400px",
+        margin: "100px auto",
+        padding: "30px",
+        borderRadius: "12px",
+        backgroundColor: "#f0f4ff",
+        boxShadow: "0 0 10px rgba(0,0,0,0.1)",
         textAlign: "center",
         fontFamily: "Arial, sans-serif",
-        border: "1px solid #ccc",
-        borderRadius: "10px",
-        padding: "20px",
       }}
     >
-      <h2>🔐 Đăng nhập</h2>
+      <h2 style={{ marginBottom: "20px", color: "#2b3a67" }}>🔐 Đăng nhập</h2>
+
       <form
         onSubmit={handleSubmit}
-        style={{ display: "flex", flexDirection: "column", gap: "10px" }}
+        style={{ display: "flex", flexDirection: "column", gap: "12px" }}
       >
         <input
           name="email"
@@ -72,7 +65,12 @@ export default function Login() {
           value={form.email}
           onChange={handleChange}
           required
-          style={{ padding: "8px", borderRadius: "5px" }}
+          style={{
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
         />
         <input
           type="password"
@@ -81,18 +79,28 @@ export default function Login() {
           value={form.password}
           onChange={handleChange}
           required
-          style={{ padding: "8px", borderRadius: "5px" }}
+          style={{
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
         />
+
         <button
           type="submit"
           style={{
-            backgroundColor: "#4CAF50",
-            color: "white",
-            padding: "8px",
+            padding: "12px",
+            borderRadius: "8px",
             border: "none",
-            borderRadius: "5px",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            fontSize: "16px",
             cursor: "pointer",
+            transition: "0.2s",
           }}
+          onMouseOver={(e) => (e.target.style.backgroundColor = "#2563eb")}
+          onMouseOut={(e) => (e.target.style.backgroundColor = "#3b82f6")}
           disabled={loading}
         >
           {loading ? "⏳ Đang đăng nhập..." : "Đăng nhập"}
@@ -106,7 +114,7 @@ export default function Login() {
           style={{
             background: "none",
             border: "none",
-            color: "blue",
+            color: "#1d4ed8",
             textDecoration: "underline",
             cursor: "pointer",
           }}

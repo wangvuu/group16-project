@@ -25,20 +25,44 @@ export default function Signup() {
   };
 
   return (
-    <div className="container" style={{ maxWidth: 400, margin: "auto" }}>
-      <h2>Đăng ký tài khoản</h2>
-      <form onSubmit={handleSubmit}>
+    <div
+      style={{
+        maxWidth: "400px",
+        margin: "100px auto",
+        padding: "30px",
+        borderRadius: "12px",
+        backgroundColor: "#f0f4ff",
+        boxShadow: "0 0 10px rgba(0,0,0,0.1)",
+        textAlign: "center",
+      }}
+    >
+      <h2 style={{ marginBottom: "20px", color: "#2b3a67" }}>
+        Đăng ký tài khoản
+      </h2>
+      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
         <input
           name="name"
           placeholder="Tên"
           onChange={handleChange}
           required
+          style={{
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
         />
         <input
           name="email"
           placeholder="Email"
           onChange={handleChange}
           required
+          style={{
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
         />
         <input
           type="password"
@@ -46,17 +70,47 @@ export default function Signup() {
           placeholder="Mật khẩu"
           onChange={handleChange}
           required
+          style={{
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
         />
 
-        <select name="role" value={form.role} onChange={handleChange}>
+        <select
+          name="role"
+          value={form.role}
+          onChange={handleChange}
+          style={{
+            padding: "10px",
+            borderRadius: "8px",
+            border: "1px solid #ccc",
+            fontSize: "16px",
+          }}
+        >
           <option value="user">Người dùng</option>
           <option value="moderator">Điều hành viên</option>
           <option value="admin">Quản trị viên</option>
         </select>
 
-        <button type="submit">Đăng ký</button>
+        <button
+          type="submit"
+          style={{
+            padding: "12px",
+            borderRadius: "8px",
+            border: "none",
+            backgroundColor: "#3b82f6",
+            color: "white",
+            fontSize: "16px",
+            cursor: "pointer",
+          }}
+        >
+          Đăng ký
+        </button>
       </form>
-      <p>{message}</p>
+
+      <p style={{ marginTop: "15px", color: "#444" }}>{message}</p>
     </div>
   );
 }
