@@ -10,12 +10,12 @@ const refreshTokenSchema = new mongoose.Schema(
     token: {
       type: String,
       required: true,
-      // ❌ Bỏ unique để tránh lỗi E11000 duplicate key
-      index: true, // ✅ vẫn tạo index để truy vấn nhanh, nhưng không unique
+      index: true, // để truy vấn nhanh
     },
     expiresAt: {
       type: Date,
       required: true,
+      index: { expires: 0 }, // TTL index: tự xóa khi hết hạn
     },
     revoked: {
       type: Boolean,
@@ -29,11 +29,18 @@ const refreshTokenSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 🧹 Middleware: xóa token đã hết hạn mỗi khi có truy vấn (tùy chọn)
-refreshTokenSchema.pre("find", async function () {
-  await mongoose.model("RefreshToken").deleteMany({
-    expiresAt: { $lte: new Date() },
+// 🔧 Tùy chọn: tạo phương thức tiện dụng
+refreshTokenSchema.statics.createToken = async function (userId, token, expiresInDays = 7) {
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+
+  const refreshToken = new this({
+    user: userId,
+    token,
+    expiresAt,
   });
-});
+
+  return await refreshToken.save();
+};
 
 export default mongoose.model("RefreshToken", refreshTokenSchema);

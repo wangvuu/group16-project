@@ -2,26 +2,35 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../services/api";
 
+// 🧩 Redux
+import { useDispatch, useSelector } from "react-redux";
+import { loginUser } from "../store/authSlice";
+
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
-  // 📌 Xử lý thay đổi input
+  const dispatch = useDispatch();
+  const { loading, error } = useSelector((state) => state.auth);
+
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  // 📌 Xử lý đăng nhập
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      dispatch(loginUser(form));
+
       const res = await login(form);
 
       // ✅ Lưu token và thông tin user
       localStorage.setItem("accessToken", res.data.accessToken);
       localStorage.setItem("refreshToken", res.data.refreshToken);
-      
       localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      // 🟢 Thông báo cho App.js biết user đã thay đổi
+      window.dispatchEvent(new Event("userChange"));
 
       setMessage("✅ Đăng nhập thành công!");
 
@@ -84,8 +93,9 @@ export default function Login() {
             borderRadius: "5px",
             cursor: "pointer",
           }}
+          disabled={loading}
         >
-          Đăng nhập
+          {loading ? "⏳ Đang đăng nhập..." : "Đăng nhập"}
         </button>
       </form>
 
@@ -105,15 +115,15 @@ export default function Login() {
         </button>
       </p>
 
-      {message && (
+      {(message || error) && (
         <p
           style={{
             marginTop: 15,
-            color: message.includes("✅") ? "green" : "red",
+            color: message.includes("✅") && !error ? "green" : "red",
             fontWeight: "bold",
           }}
         >
-          {message}
+          {message || error}
         </p>
       )}
     </div>

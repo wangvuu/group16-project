@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import { body, validationResult } from "express-validator";
 import User from "../models/User.js";
 import RefreshToken from "../models/RefreshToken.js";
-import Log from "../models/Log.js"; // 📝 Ghi log hoạt động
+import Log from "../models/Log.js";
 import { loginRateLimiter } from "../middleware/rateLimit.js";
 
 const router = express.Router();
@@ -61,7 +61,7 @@ router.post(
 );
 
 /* =======================
-   🔐 POST /login (Rate Limit + Log)
+   🔐 POST /login
 ======================= */
 router.post("/login", loginRateLimiter, async (req, res) => {
   const { email, password } = req.body;
@@ -84,10 +84,7 @@ router.post("/login", loginRateLimiter, async (req, res) => {
       return res.status(400).json({ message: "Sai mật khẩu" });
     }
 
-    // 🧾 Xóa refresh token cũ để tránh trùng
-    await RefreshToken.deleteMany({ user: user._id });
-
-    // 🔑 Tạo Access Token & Refresh Token mới
+    // 🔑 Tạo Access Token & Refresh Token
     const accessToken = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.ACCESS_TOKEN_SECRET || "access_secret_key",
@@ -100,12 +97,16 @@ router.post("/login", loginRateLimiter, async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    // 💾 Lưu refresh token
-    await RefreshToken.create({
-      user: user._id,
-      token: refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-    });
+    // ✅ Cập nhật hoặc tạo mới refresh token (fix lỗi 500)
+    await RefreshToken.findOneAndUpdate(
+      { user: user._id },
+      {
+        token: refreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        revoked: false,
+      },
+      { upsert: true, new: true }
+    );
 
     // 📝 Ghi log đăng nhập thành công
     await Log.create({
